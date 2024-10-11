@@ -1,6 +1,7 @@
 ## Scan a docker image -> get a SARIF/SBOM report
 
 name: Mayhem Dynamic SBOM/SCA + Scout
+run-name: Mayhem DSBOM + Scout on ${{ github.event.inputs.docker_image }}
 
 on:
   workflow_dispatch:
@@ -102,13 +103,19 @@ jobs:
           sarif_file: dynamic_sca_scout.sarif
           category: Security/SCA
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
       - name: Install poetry package when graphs are requested
         if: ${{ github.event.inputs.generate-graphs == 'true' }}
         run: |
           sudo apt-get install python3-pip
           pip3 install poetry
-          poetry install
-          poetry run python3 graph dynamic_sca_scout.sarif venn.png
+          pip3 install matplotlib-venn matplotlib
+          poetry install || true
+          poetry run main dynamic_sca_scout.sarif venn.png || true
 
       - name: Post graph artifact
         if: ${{ github.event.inputs.generate-graphs == 'true' }}
